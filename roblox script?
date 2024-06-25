@@ -1,0 +1,226 @@
+-- Configuration
+local Admins = { "Admin1", "Admin2" } -- List of trusted admins (replace with actual usernames)
+local HighlightColor = Color3.fromRGB(255, 255, 0) -- Yellow color for highlighting
+local HighlightTransparency = 0.5 -- Transparency of highlight
+local HighlightDuration = 3 -- Duration in seconds for highlighting effect
+
+-- Function to calculate distance between two points
+local function calculateDistance(point1, point2)
+    return (point1 - point2).magnitude
+end
+
+-- Function to create highlight effect on player's character
+local function highlightPlayerCharacter(player)
+    local character = player.Character
+    if character then
+        -- Create a highlight part
+        local highlightPart = Instance.new("Part")
+        highlightPart.Name = "HighlightPart"
+        highlightPart.Anchored = true
+        highlightPart.Size = character:GetExtentsSize() * 1.1
+        highlightPart.Transparency = HighlightTransparency
+        highlightPart.Color = HighlightColor
+        highlightPart.CanCollide = false
+        highlightPart.Parent = character
+
+        -- Remove highlight part after a duration
+        delay(HighlightDuration, function()
+            if highlightPart then
+                highlightPart:Destroy()
+            end
+        end)
+    end
+end
+
+-- Function to create and manage name label above player's head
+local function createNameLabel(player)
+    local character = player.Character
+    if character then
+        -- Create a BillboardGui for the nametag
+        local billboardGui = Instance.new("BillboardGui")
+        billboardGui.Name = "NameTag"
+        billboardGui.Size = UDim2.new(0, 100, 0, 50)
+        billboardGui.StudsOffset = Vector3.new(0, 3, 0)
+        billboardGui.AlwaysOnTop = true -- Ensure nametag is always visible above other parts
+        billboardGui.LightInfluence = 1 -- Ensure nametag is visible in all lighting conditions
+        billboardGui.Adornee = character:FindFirstChild("Head") or character:FindFirstChild("Torso")
+        billboardGui.Parent = character:FindFirstChild("Head") or character:FindFirstChild("Torso")
+
+        -- Create a TextLabel inside BillboardGui for the player's name
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(1, 0, 1, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.Text = player.Name
+        nameLabel.TextColor3 = Color3.new(1, 1, 1)
+        nameLabel.Font = Enum.Font.SourceSansBold
+        nameLabel.TextSize = 20
+        nameLabel.Parent = billboardGui
+    end
+end
+
+-- Function to handle admin commands
+local function handleAdminCommand(player, command)
+    local splitCommand = command:lower():split(" ")
+    local baseCommand = splitCommand[1]
+    
+    if baseCommand == "kick" then
+        -- Example command: /kick <username>
+        local targetPlayerName = splitCommand[2]
+        local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
+        
+        if targetPlayer then
+            targetPlayer:Kick("You have been kicked by an admin.")
+        else
+            warn("Player not found:", targetPlayerName)
+        end
+    elseif baseCommand == "ban" then
+        -- Example command: /ban <username>
+        local targetPlayerName = splitCommand[2]
+        local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
+        
+        if targetPlayer then
+            targetPlayer:Kick("You have been banned from the game.")
+        else
+            warn("Player not found:", targetPlayerName)
+        end
+    elseif baseCommand == "unban" then
+        -- Example command: /unban <username>
+        local targetPlayerName = splitCommand[2]
+        -- Implement your unban logic here (not implemented in this example)
+        print("Unban command executed for:", targetPlayerName)
+    elseif baseCommand == "giveadmin" then
+        -- Example command: /giveadmin <username>
+        local newAdminName = splitCommand[2]
+        table.insert(Admins, newAdminName)
+        print(newAdminName .. " is now an admin.")
+    elseif baseCommand == "removeadmin" then
+        -- Example command: /removeadmin <username>
+        local adminToRemove = splitCommand[2]
+        local index = table.find(Admins, adminToRemove)
+        if index then
+            table.remove(Admins, index)
+            print(adminToRemove .. " is no longer an admin.")
+        else
+            warn(adminToRemove .. " is not an admin.")
+        end
+    elseif baseCommand == "spawnitem" then
+        -- Example command: /spawnitem <itemname>
+        local itemName = splitCommand[2]
+        local character = player.Character
+        
+        if character then
+            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                local item = Instance.new("Part")
+                item.Size = Vector3.new(2, 2, 2)
+                item.Position = humanoidRootPart.Position + Vector3.new(0, 5, 0) -- Spawn item above player
+                item.Anchored = false
+                item.Parent = game.Workspace
+                
+                print(player.Name .. " spawned " .. itemName)
+            else
+                warn("HumanoidRootPart not found for player:", player.Name)
+            end
+        else
+            warn("Character not found for player:", player.Name)
+        end
+    elseif baseCommand == "loopkill" then
+        -- Example command: /loopkill <username>
+        local targetPlayerName = splitCommand[2]
+        local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
+        
+        if targetPlayer then
+            -- Loop kills the player until they leave or are stopped
+            local humanoid = targetPlayer.Character and targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                while humanoid.Health > 0 do
+                    humanoid:TakeDamage(humanoid.Health)
+                    wait(0.1)
+                end
+            end
+        else
+            warn("Player not found:", targetPlayerName)
+        end
+    elseif baseCommand == "infhealth" then
+        -- Example command: /infhealth <username>
+        local targetPlayerName = splitCommand[2]
+        local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
+        
+        if targetPlayer then
+            -- Sets the player's health to infinity
+            local humanoid = targetPlayer.Character and targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.MaxHealth = math.huge
+                humanoid.Health = math.huge
+            end
+        else
+            warn("Player not found:", targetPlayerName)
+        end
+    elseif baseCommand == "teleport" then
+        -- Example command: /teleport <username> <x> <y> <z>
+        local targetPlayerName = splitCommand[2]
+        local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
+        
+        if targetPlayer then
+            local character = targetPlayer.Character
+            if character then
+                local x = tonumber(splitCommand[3] or 0)
+                local y = tonumber(splitCommand[4] or 0)
+                local z = tonumber(splitCommand[5] or 0)
+                
+                character:SetPrimaryPartCFrame(CFrame.new(Vector3.new(x, y, z)))
+                print("Teleported " .. targetPlayer.Name .. " to (" .. x .. ", " .. y .. ", " .. z .. ")")
+            else
+                warn("Character not found for player:", targetPlayer.Name)
+            end
+        else
+            warn("Player not found:", targetPlayerName)
+        end
+    elseif baseCommand == "clearinventory" then
+        -- Example command: /clearinventory <username>
+        local targetPlayerName = splitCommand[2]
+        local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
+        
+        if targetPlayer then
+            local character = targetPlayer.Character
+            if character then
+                for _, child in ipairs(character:GetChildren()) do
+                    if child:IsA("Tool") then
+                        child:Destroy()
+                    end
+                end
+                print("Cleared inventory for " .. targetPlayer.Name)
+            else
+                warn("Character not found for player:", targetPlayer.Name)
+            end
+        else
+            warn("Player not found:", targetPlayerName)
+        end
+    elseif baseCommand == "fly" then
+        -- Example command: /fly <username>
+        local targetPlayerName = splitCommand[2]
+        local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
+        
+        if targetPlayer then
+            local character = targetPlayer.Character
+            if character then
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid.PlatformStand = true
+                    print(targetPlayer.Name .. " can now fly.")
+                end
+            else
+                warn("Character not found for player:", targetPlayer.Name)
+            end
+        else
+            warn("Player not found:", targetPlayerName)
+        end
+    elseif baseCommand == "noclip" then
+        -- Example command: /noclip <username>
+        local targetPlayerName = splitCommand[2]
+        local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
+        
+        if targetPlayer then
+            local character = targetPlayer.Character
+            if character then
+                for _,
